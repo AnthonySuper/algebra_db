@@ -1,5 +1,8 @@
 require 'bundler/setup'
 require 'algebra_db'
+require 'rspec/its'
+
+Dir['./spec/support/**/*.rb'].sort.each { |f| require(f) }
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
@@ -10,5 +13,6 @@ RSpec.configure do |config|
 
   config.expect_with :rspec do |c|
     c.syntax = :expect
+    c.include_chain_clauses_in_custom_matcher_descriptions = true
   end
 end

@@ -1,4 +1,9 @@
 require 'bundler/setup'
+if ENV['COVERAGE']
+  require 'simplecov'
+  SimpleCov.start
+end
+
 require 'algebra_db'
 require 'rspec/its'
 

@@ -22,12 +22,52 @@ class User < AlgebraDB::Table
   relationship :users_not_me, User do |other_users|
     other_users.id.neq(id)
   end
+
+  relationship :audits, -> { UserAudit } do |user_audits|
+    user_audits.user_id.eq(id)
+  end
+
+  ##
+  # Can return expressions!
+  def full_name
+    first_name.append(AlgebraDB::Build.param(' ')).append(last_name)
+  end
+end
+
+##
+# Fake audit log for users
+class UserAudit < AlgebraDB::Table
+  self.table_name = :user_audits
+
+  column :id, :Integer
+  column :user_id, :Integer
+  column :scopes_granted, AlgebraDB::Value::Array::Text
+  column :changes, AlgebraDB::Value::JSONB
+
+  relationship :user, User do |user|
+    user.id.eq(user_id)
+  end
+
+  relationship :similar_scopes, UserAudit do |other_audits|
+    other_audits.scopes_granted.overlaps(scopes_granted).and(
+      other_audits.id.neq(id)
+    )
+  end
 end
 
 COOL_QUERY = AlgebraDB::Statement::Select.run_syntax do
-  u = all(User)
-  other_u = join_relationship(u.users_not_me)
-  select(name: u.first_name.append(raw_param(' ')).append(other_u.last_name))
+  audits = all(UserAudit)
+  similar = join_relationship(audits.similar_scopes)
+  audit_users = join_relationship(audits.user)
+  similar_users = join_relationship(similar.user)
+  select(
+    parent_id: audits.id,
+    parent_scopes: audits.scopes_granted,
+    parent_user: audit_users.full_name,
+    child_id: similar.id,
+    child_scopes: similar.scopes_granted,
+    child_user: similar_users.full_name
+  )
 end
 
 ##

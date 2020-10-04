@@ -26,7 +26,7 @@ module AlgebraDB
           raise ArgumentError, "#{relationish} does not respond to to_relation!"
         end
 
-        relation = relationish.to_relation(:"tbl_#{@froms.length + 1}")
+        relation = relationish.to_relation(next_table_alias)
         @froms << relation.from_clause
         relation
       end
@@ -46,7 +46,7 @@ module AlgebraDB
       end
 
       def joins(other_table, type: :inner, &block)
-        relation = other_table.to_relation(:"tbl_#{@froms.length + 1}")
+        relation = other_table.to_relation(next_table_alias)
         join_clause = block.call(relation)
         @joins << Build::Join.new(type, relation.from_clause, join_clause)
         relation
@@ -74,6 +74,10 @@ module AlgebraDB
 
         builder.text('WHERE')
         builder.separate(@wheres, separator: ' AND') { |w, b| w.render_syntax(b) }
+      end
+
+      def next_table_alias
+        :"t_#{@froms.count + @joins.count + 1}"
       end
     end
   end

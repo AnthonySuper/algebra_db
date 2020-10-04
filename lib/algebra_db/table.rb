@@ -11,6 +11,11 @@ module AlgebraDB
         (@columns || {}).dup
       end
 
+      def inspect
+        str = "#<#{self.name}:#{self.object_id} "
+        str << "columns=[#{self.columns.keys.map(&:inspect).join(", ")}]>"
+      end
+
       def column(name, value)
         value = ::AlgebraDB::Value.const_get(value) if value.is_a?(Symbol)
         @columns ||= {}

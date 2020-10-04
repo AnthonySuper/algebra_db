@@ -18,12 +18,16 @@ class User < AlgebraDB::Table
   column :id, :Integer
   column :first_name, :Text
   column :last_name, :Text
+
+  relationship :users_not_me, User do |other_users|
+    other_users.id.neq(id)
+  end
 end
 
 COOL_QUERY = AlgebraDB::Statement::Select.run_syntax do
   u = all(User)
-  where(u.id.eq(u.id))
-  select(init_id: u.id.eq(u.id))
+  other_u = join_relationship(u.users_not_me)
+  select(name: u.first_name.append(raw_param(' ')).append(other_u.last_name))
 end
 
 ##

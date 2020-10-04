@@ -36,7 +36,8 @@ RSpec.describe AlgebraDB::Statement::Select do
 
     it do
       expect =
-        'SELECT "tbl_1"."first_name" AS "first_name" FROM users tbl_1 WHERE ("tbl_1"."first_name" = "tbl_1"."last_name") '
+        'SELECT "tbl_1"."first_name" AS "first_name" ' \
+        'FROM users tbl_1 WHERE ("tbl_1"."first_name" = "tbl_1"."last_name") '
       should render_syntax(expect)
     end
   end

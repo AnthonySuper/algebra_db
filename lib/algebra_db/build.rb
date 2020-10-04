@@ -8,6 +8,7 @@ module AlgebraDB
     autoload(:Column, 'algebra_db/build/column')
     autoload(:TableFrom, 'algebra_db/build/table_from')
     autoload(:SelectItem, 'algebra_db/build/select_item')
+    autoload(:Join, 'algebra_db/build/join')
     autoload(:SelectList, 'algebra_db/build/select_list')
 
     ##

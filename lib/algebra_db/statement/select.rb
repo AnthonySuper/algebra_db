@@ -10,6 +10,7 @@ module AlgebraDB
       def initialize
         @wheres = []
         @froms = []
+        @joins = []
         @select = nil
       end
 
@@ -38,6 +39,19 @@ module AlgebraDB
         @select = Build::SelectList.new(*selects)
       end
 
+      def join_relationship(relationship, type: :inner)
+        joins(relationship.joined_table, type: type) do |rel|
+          relationship.join_clause(rel)
+        end
+      end
+
+      def joins(other_table, type: :inner, &block)
+        relation = other_table.to_relation(:"tbl_#{@froms.length + 1}")
+        join_clause = block.call(relation)
+        @joins << Build::Join.new(type, relation.from_clause, join_clause)
+        relation
+      end
+
       def raw_param(ruby_value)
         Build.param(ruby_value)
       end
@@ -55,6 +69,7 @@ module AlgebraDB
         @select.render_syntax(builder)
         builder.text('FROM')
         builder.separate(@froms) { |f, b| f.render_syntax(b) }
+        @joins.each { |j| j.render_syntax(builder) }
         return if @wheres.empty?
 
         builder.text('WHERE')

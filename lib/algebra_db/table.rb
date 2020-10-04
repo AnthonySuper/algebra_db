@@ -28,6 +28,18 @@ module AlgebraDB
         new(relation_alias)
       end
 
+      def relationship(name, other_table, &block)
+        define_method(name) do
+          relater_proc =
+            if block.arity == 2
+              proc { |other_relation| block.call(self, other_relation) }
+            else
+              proc { |other_relation| instance_exec(other_relation, &block) }
+            end
+          Def::Relationship.new(other_table, relater_proc)
+        end
+      end
+
       attr_accessor :table_name
     end
 

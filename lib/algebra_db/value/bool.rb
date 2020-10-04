@@ -14,6 +14,18 @@ module AlgebraDB
           Build::Op.new('OR', self, other)
         )
       end
+
+      ##
+      # Specialization of this decoder.
+      class Decoder < AlgebraDB::Exec::Decoder
+        def decode_value(db_value)
+          db_value == 't'
+        end
+      end
+
+      def decoder
+        Decoder.new
+      end
     end
   end
 end

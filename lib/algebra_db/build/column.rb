@@ -5,8 +5,8 @@ module AlgebraDB
         builder.text(%("#{table}"."#{column}"))
       end
 
-      def to_select_item
-        SelectItem.new(self, column)
+      def default_select_item_alias
+        column
       end
     end
   end

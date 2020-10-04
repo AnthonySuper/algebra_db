@@ -38,6 +38,16 @@ module AlgebraDB
         @select = Build::SelectList.new(*selects)
       end
 
+      def raw_param(ruby_value)
+        Build.param(ruby_value)
+      end
+
+      def to_delivery
+        raise ArgumentError, 'nothing selected' unless @select
+
+        Exec::Delivery.new(self, @select.row_decoder)
+      end
+
       def render_syntax(builder)
         raise ArgumentError, 'no select' unless @select
 

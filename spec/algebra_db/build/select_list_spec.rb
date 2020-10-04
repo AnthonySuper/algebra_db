@@ -2,8 +2,16 @@ require 'spec_helper'
 
 RSpec.describe AlgebraDB::Build::SelectList do
   context 'with a hash' do
-    let(:id_col) { AlgebraDB::Build::Column.new(:tbl_1, :id) }
-    let(:name_col) { AlgebraDB::Build::Column.new(:tbl_2, :name) }
+    let(:id_col) do
+      AlgebraDB::Value::Integer.new(
+        AlgebraDB::Build::Column.new(:tbl_1, :id)
+      )
+    end
+    let(:name_col) do
+      AlgebraDB::Value::Text.new(
+        AlgebraDB::Build::Column.new(:tbl_2, :name)
+      )
+    end
     subject(:select) do
       described_class.new(id_col, name_alias: name_col)
     end

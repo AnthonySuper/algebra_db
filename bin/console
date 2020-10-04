@@ -2,10 +2,46 @@
 
 require 'bundler/setup'
 require 'algebra_db'
+require 'logger'
 
 # You can add fixtures and/or initialization code here to make experimenting
 # with your gem easier. You can also use a different console, if you like.
 
 # (If you use this, don't forget to add pry to your Gemfile!)
 require 'pry'
+
+##
+# Basic user table
+class User < AlgebraDB::Table
+  self.table_name = :users
+
+  column :id, :Integer
+  column :first_name, :Text
+  column :last_name, :Text
+end
+
+COOL_QUERY = AlgebraDB::Statement::Select.run_syntax do
+  u = all(User)
+  where(u.id.eq(u.id))
+  select(init_id: u.id.eq(u.id))
+end
+
+##
+# Connection wrapper that logs stuff
+class LoggedConnection
+  def initialize(logger, connection)
+    @logger = logger
+    @connection = connection
+  end
+
+  attr_reader :logger, :connection
+
+  def exec_params(query, params, &block)
+    logger.debug(query)
+    connection.exec_params(query, params, &block)
+  end
+end
+
+CONN = LoggedConnection.new(Logger.new($stdout), PG::Connection.new('postgres://localhost/algebra_db_test'))
+
 Pry.start

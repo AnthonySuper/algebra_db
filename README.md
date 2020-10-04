@@ -1,6 +1,164 @@
 # AlgebraDB
 
-This is yet another database library for Ruby.
+This is a database library for Ruby based on *relational expressions*.
+Most other database libraries, like the excellent [sequel](https://github.com/jeremyevans/sequel) or [activerecord](https://github.com/rails/rails/tree/master/activerecord) are based on some idea of a *scoped dataset*, which is essentially an object that you can chain methods on to do further filtering, ordering, or what have you.
+AlgebraDB is instead based on a sort of *typed query builder*.
+Your queries return arrays of structs, custom-made for whatever query you're doing.
+This encourages 
+
+An example is probably illustrative...
+
+## Example
+
+Let's say I have two tables.
+One is a `users` table, defined like this:
+
+```sql
+CREATE TABLE users(
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  first_name TEXT NOT NULL,
+  last_name TEXT NOT NULL
+);
+
+-- Probably some sort of "What did the user do" thing.
+CREATE TABLE user_audits(
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIAMRY KEY,
+  user_id BIGINT REFERENCES users(id) NOT NULL,
+  scoped_granted TEXT[] NOT NULL,
+  values_changes JSONB DEFAULT '{}'::jsonb
+);
+```
+
+Now, these two tables are relatively nice to work with.
+But, what if I wanted to run a query that gave me all the audit logs performed under similar scopes, and what users performed those?
+This is already a bit of an annoying query, but it gets worse if I want to include the users' full names as well.
+
+With AlgebraDB, we would define some classes like this:
+
+```ruby
+##
+# Basic user table
+class User < AlgebraDB::Table
+  self.table_name = :users
+
+  column :id, :Integer
+  column :first_name, :Text
+  column :last_name, :Text
+
+end
+
+##
+# Audit log for users
+class UserAudit < AlgebraDB::Table
+  self.table_name = :user_audits
+
+  column :id, :Integer
+  column :user_id, :Integer
+  column :scopes_granted, AlgebraDB::Value::Array::Text
+  column :changes, AlgebraDB::Value::JSONB
+end
+```
+
+We could then run a query like this:
+
+```ruby
+query = AlgebraDB::Statement::Select.run_syntax do
+  parent_audits = all(UserAudit)
+  parent_audit_users = joins(User) do |user|
+    user.id.eq(parent_audits.user_id)
+  end
+  child_audits = joins(UserAudit) do |other_audit|
+    other_audit.scopes_granted.overlaps(parent_audits.scopes_granted).and(
+      other_audits.id.neq(parent_audits.id)
+    )
+  end
+  child_audit_users = joins(User) do |user|
+    user.id.eq(child_audits.user_id)
+  end
+  select(
+    parent_audit_id: parent_audits.id,
+    parent_audit_user: parent_audit_users.first_name.append(raw_param(' ')).append(parent_audit_users.last_name),
+    child_audit_id: child_audits.id,
+    child_audit_user: child_audit_users.first_name.append(raw_param(' ')).append(child_audit_users.last_name)
+  )
+end
+```
+
+This, of course, is not the best code. 
+We're doing a lot of repetition.
+However, since AlgebraDB operates on *tables* instead of *records*, we can define some cleanup easily:
+
+
+```ruby
+##
+# Basic user table
+class User < AlgebraDB::Table
+  self.table_name = :users
+
+  column :id, :Integer
+  column :first_name, :Text
+  column :last_name, :Text
+
+  ##
+  # Instances are a *table in a query*, so this works!
+  def full_name
+    first_name.concat(AlgebraDB::Build.param(' ')).concat(last_name)
+  end
+end
+
+##
+# Audit log for users
+class UserAudit < AlgebraDB::Table
+  self.table_name = :user_audits
+
+  column :id, :Integer
+  column :user_id, :Integer
+  column :scopes_granted, AlgebraDB::Value::Array::Text
+  column :changes, AlgebraDB::Value::JSONB
+
+  relationship :user, User do |user|
+    user.id.eq(user_id)
+  end
+
+  relationship :similar_audits, UserAudit do |other_audit|
+    other_audit.scopes_granted.overlaps(scopes_granted).and(
+      other_audit.id.neq(id)
+    )
+  end
+end
+```
+
+Now we only need to write:
+
+```ruby
+AlgebraDB::Statement::Select.run_syntax do
+  parent_audits = all(UserAudit)
+  parent_audit_users = join_relationship(parent_audits.user)
+  child_audits = join_relationship(parent_audits.similar_audits)
+  child_audit_users = join_relationship(child_audits.user)
+  select(
+    parent_audit_id: parent_audits.id,
+    parent_audit_user: parent_audit_users.full_name,
+    child_audit_id: child_audits.id,
+    child_audit_user: child_audit_users.full_name
+  )
+end
+```
+
+Notice a few things we did here that make this moderately magic:
+
+1. We joined in the same table multiple times very, very easily.
+   These tables have different aliases in the query, so if we wanted only child audits by a user with a name like "bob", we could have just added a `where(child_audit_users.full_name.ilike(raw_param('Bob')))`
+2. All of the user-supplied data happens via postgres parameters.
+   We're not putting raw SQL strings *anywhere*: even the space in the `full_name` method is parameterized!
+3. We wrote an ad-hoc aliased select list, which will be converted at runtime to ruby `Struct` instances with the right keys.
+   That means we can sort those records, use them as keys in a hash, or do whatever we want, easily.
+
+In the future this will make way for powerful aggregation functionality.
+Postgres already has `ARRAY_AGG` and `JSONB_AGG`.
+Instead of making multiple queries to do eager-loading, or making one big query and then performing reassociation yourself, you'll be able to let the database (which is a hell of a lot faster than Ruby) do it for you!
+
+
 ## Installation
 
 Add this line to your application's Gemfile:

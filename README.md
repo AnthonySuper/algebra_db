@@ -4,7 +4,7 @@ This is a database library for Ruby based on *relational expressions*.
 Most other database libraries, like the excellent [sequel](https://github.com/jeremyevans/sequel) or [activerecord](https://github.com/rails/rails/tree/master/activerecord) are based on some idea of a *scoped dataset*, which is essentially an object that you can chain methods on to do further filtering, ordering, or what have you.
 AlgebraDB is instead based on a sort of *typed query builder*.
 Your queries return arrays of structs, custom-made for whatever query you're doing.
-This encourages 
+This encourages us to use the full functionality of our database, resulting in faster and more correct queries.
 
 An example is probably illustrative...
 

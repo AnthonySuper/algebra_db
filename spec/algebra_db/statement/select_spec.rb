@@ -19,7 +19,7 @@ RSpec.describe AlgebraDB::Statement::Select do
     end
 
     it do
-      expect = 'SELECT "tbl_1"."first_name" AS "first_name", "tbl_1"."last_name" AS "last_name" FROM users tbl_1 '
+      expect = 'SELECT "t_1"."first_name" AS "first_name", "t_1"."last_name" AS "last_name" FROM users t_1 '
       should render_syntax(expect)
     end
   end
@@ -36,8 +36,8 @@ RSpec.describe AlgebraDB::Statement::Select do
 
     it do
       expect =
-        'SELECT "tbl_1"."first_name" AS "first_name" ' \
-        'FROM users tbl_1 WHERE ("tbl_1"."first_name" = "tbl_1"."last_name") '
+        'SELECT "t_1"."first_name" AS "first_name" ' \
+        'FROM users t_1 WHERE ("t_1"."first_name" = "t_1"."last_name") '
       should render_syntax(expect)
     end
   end

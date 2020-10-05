@@ -54,11 +54,3 @@ jobs:
         key: ${{ runner.os }}-${{ matrix.ruby }}-example-deps-${{ hashFiles('example/**/Gemfile.lock') }}
         restore-keys: |
           ${{ runner.os }}-${{ matrix.ruby }}-example-deps-
-    - name: Install example dependencies for example
-      working-directory: example
-      run: |
-        bundle config path vendor/bundle
-        bundle install
-    - name: Run specs for example
-      working-directory: example
-      run: bundle exec rake

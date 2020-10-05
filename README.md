@@ -22,7 +22,7 @@ CREATE TABLE users(
 
 -- Probably some sort of "What did the user do" thing.
 CREATE TABLE user_audits(
-  id BIGINT GENERATED ALWAYS AS IDENTITY PRIAMRY KEY,
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   user_id BIGINT REFERENCES users(id) NOT NULL,
   scoped_granted TEXT[] NOT NULL,
   values_changes JSONB DEFAULT '{}'::jsonb

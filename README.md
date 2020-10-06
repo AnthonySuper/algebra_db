@@ -209,7 +209,18 @@ AlgebraDB::Statement::Update.run_syntax do
 end
 ```
 
-Or, you can do a more complex one, like this:
+This generates, roughly:
+
+```sql
+UPDATE users
+SET first_name = 'Mega Anthony'
+WHERE first_name = 'Anthony'
+RETURNING id, first_name
+```
+
+(Note: in the actual code, parameterized queries are of course used.)
+
+You can also do a more complex one, like this:
 
 ```ruby
 AlgebraDB::Statement::Update.run_syntax do
@@ -219,7 +230,16 @@ AlgebraDB::Statement::Update.run_syntax do
 end
 ```
 
+This generates:
+
+```sql
+UPDATE users
+SET first_name = first_name || ' is dope'
+RETURNING id, first_name
+```
+
 This uses an *expression* in the update statement, something rather annoying to do with other Ruby database libraries.
+It, too, winds up being much, much faster!
 
 ## Installation
 

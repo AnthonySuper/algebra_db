@@ -4,9 +4,9 @@ RSpec.describe AlgebraDB::Statement::Insert do
   describe '#insert_hash' do
     let(:valid_syntax) do
       'INSERT INTO users(first_name, last_name) '\
-      'VALUES ($1, $2) RETURNING '\
-      '"users"."id" AS "id", "users"."first_name" AS "first_name", '\
-      '"users"."last_name" AS "last_name" '
+        'VALUES ($1, $2) RETURNING '\
+        '"users"."id" AS "id", "users"."first_name" AS "first_name", '\
+        '"users"."last_name" AS "last_name" '
     end
 
     shared_examples 'a valid run' do
@@ -86,6 +86,79 @@ RSpec.describe AlgebraDB::Statement::Insert do
       it { should_not be_returns_values }
       it { should render_syntax('INSERT INTO users(first_name) VALUES ($1) ').with_params(contain_exactly('Bob')) }
       its(:to_delivery) { should_not be_returns_values }
+    end
+  end
+
+  describe 'use with subselects' do
+    shared_examples 'a proper subselect' do
+      specify { expect { subject }.to_not raise_error }
+      it { should_not be_nil }
+      it do
+        syntax =
+          'INSERT INTO user_audits(user_id) SELECT "t_1"."id" AS "user_id" FROM users t_1 '
+        should(render_syntax(syntax))
+      end
+    end
+
+    context 'when used with a select statement' do
+      subject do
+        s = select
+        described_class.run_syntax do
+          into(UserAuditTable, :user_id)
+          select(s)
+        end
+      end
+
+      let(:select) do
+        AlgebraDB::Statement::Select.run_syntax do
+          users = all(UserTable)
+          select(user_id: users.id)
+        end
+      end
+      it_behaves_like 'a proper subselect'
+    end
+
+    context 'when used with a select block' do
+      subject do
+        described_class.run_syntax do
+          into(UserAuditTable, :user_id)
+          select do
+            users = all(UserTable)
+            select(user_id: users.id)
+          end
+        end
+      end
+      it_behaves_like 'a proper subselect'
+    end
+
+    it 'fails when you also try to specify values' do
+      expect do
+        described_class.run_syntax do
+          into(UserAuditTable, :user_id)
+          select { select(user_id: all(UserTable).id) }
+          value(param(1))
+        end
+      end.to raise_error(ArgumentError)
+    end
+
+    it 'fails when you have already specified values' do
+      expect do
+        described_class.run_syntax do
+          into(UserAuditTable, :user_id)
+          value(param(1))
+          select { select(user_id: all(UserTable).id) }
+        end
+      end.to raise_error(ArgumentError)
+    end
+
+    it 'fails when you try twice' do
+      expect do
+        described_class.run_syntax do
+          into(UserAuditTable, :user_id)
+          select { select(user_id: all(UserTable).id) }
+          select { select(user_id: all(UserTable).id.add(raw_param(1))) }
+        end
+      end.to raise_error(ArgumentError, match(/already/))
     end
   end
 end

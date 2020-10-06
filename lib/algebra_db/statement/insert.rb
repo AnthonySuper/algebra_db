@@ -29,6 +29,7 @@ module AlgebraDB
       def initialize
         @into = nil
         @values = []
+        @select = nil
         @returning = nil
       end
 
@@ -42,7 +43,19 @@ module AlgebraDB
       end
 
       def value(*value_items)
+        raise ArgumentError, 'cannot provide both a select and values!' if @select
+
         @values << Build::InsertValue.new(value_items.flatten)
+      end
+
+      def select(selectish = nil, &block)
+        raise ArgumentError, 'pass either a subselect or a block' if block && selectish
+        raise ArgumentError, 'already given a select' if @select
+        raise ArgumentError, 'cannot provide both a select and values!' if @values.any?
+
+        selectish = Select.run_syntax(&block) if block
+
+        @select = selectish
       end
 
       def returning(*columns)
@@ -67,16 +80,21 @@ module AlgebraDB
       def render_syntax(builder)
         builder.text('INSERT INTO')
         @into.render_syntax(builder)
-
-        if @values.any?
-          builder.text('VALUES')
-          builder.separate(@values) { |v, b| v.render_syntax(b) }
-        end
+        render_insertion(builder)
 
         return unless @returning
 
         builder.text('RETURNING')
         @returning.render_syntax(builder)
+      end
+
+      def render_insertion(builder)
+        if @values.any?
+          builder.text('VALUES')
+          builder.separate(@values) { |v, b| v.render_syntax(b) }
+        elsif @select
+          @select.render_syntax(builder)
+        end
       end
 
       ##

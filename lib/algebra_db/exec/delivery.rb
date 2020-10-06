@@ -1,8 +1,12 @@
 module AlgebraDB
   module Exec
     ##
-    # Something we can hand off to a connection
-    # to get back ruby values to play with.
+    # AlgebraDB Statements return a +Delivery+ instead of raw values.
+    # You can then use this delivery with a connection to get the Ruby values you want.
+    # This is intentional, as it makes writing N+1 queries very difficult without it being very obvious
+    # what is going on!
+    #
+    # TODO: Add some kind of transactional executor that executes deliveries in the context of a connection
     class Delivery
       def initialize(query_builder, select_decoder)
         @query_builder = query_builder
@@ -13,6 +17,14 @@ module AlgebraDB
         !@select_decoder.nil?
       end
 
+      ##
+      # Execute this delivery in the context of the given connection.
+      #
+      # :call-seq:
+      #
+      #   delivery.execute!(conn) { |r| puts r } -> nil
+      #   delivery.execute!(conn) -> Enumerator
+      #   delviery.execute!(conn).to_a -> Array
       def execute!(connection)
         return enum_for(:execute!, connection) unless block_given?
 
@@ -22,10 +34,12 @@ module AlgebraDB
             yield @select_decoder.decode_row(row)
           end
         end
+
+        nil
       end
 
       ##
-      # Execute a query raw, IE, don't do decoding.
+      # Execute a query raw, without decoding.
       def execute_raw!(connection)
         sb = SyntaxBuilder.new.tap { |t| @query_builder.render_syntax(t) }
         # rubocop:disable Style/ExplicitBlockArgument

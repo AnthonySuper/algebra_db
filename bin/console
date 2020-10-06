@@ -70,6 +70,19 @@ INSERT_HASHES = AlgebraDB::Statement::Insert.insert_hash(
   ]
 )
 
+UPDATE_SET = AlgebraDB::Statement::Update.run_syntax do
+  u = table(User)
+  set(:first_name, param('Mega Anthony'))
+  where(u.first_name.eq(param('Anthony')))
+  returning(:id, :first_name)
+end
+
+UPDATE_EXPR = AlgebraDB::Statement::Update.run_syntax do
+  u = table(User)
+  set(:first_name, u.first_name.append(param(' is dope')))
+  returning(:id, :first_name)
+end
+
 COOL_QUERY = AlgebraDB::Statement::Select.run_syntax do
   audits = all(UserAudit)
   similar = join_relationship(audits.similar_scopes)

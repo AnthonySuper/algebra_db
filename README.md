@@ -158,6 +158,68 @@ In the future this will make way for powerful aggregation functionality.
 Postgres already has `ARRAY_AGG` and `JSONB_AGG`.
 Instead of making multiple queries to do eager-loading, or making one big query and then performing reassociation yourself, you'll be able to let the database (which is a hell of a lot faster than Ruby) do it for you!
 
+### Inserts
+
+We provide more fully-fledged insert functionality as well.
+For example, you wish to simply insert some hashes, you can:
+
+```ruby
+AlgebraDB::Statement::Insert.insert_hash(
+  User,
+  [
+    { first_name: 'Bob', last_name: 'Smith' },
+    { first_name: 'Bob', last_name: 'Warwick' }
+  ]
+)
+```
+
+However, you can also insert from a *select*.
+This can be quite handy:
+
+```ruby
+AlgebraDB::Statement::Insert.run_syntax do
+  into(UserAudit, %i[user_id])
+  select do
+    u = all(User)
+    select(user_id: u.id)
+  end
+end
+```
+
+This generates SQL like:
+
+```ruby
+INSERT INTO user_audits(user_id)
+SELECT users.id AS user_id FROM users
+```
+
+This is much faster than doing a round-trip through ruby to get the insert!
+
+### Updates
+
+Updates have the full functionality of actual SQL updates.
+That is, you can do a simple update, like this:
+
+```ruby
+AlgebraDB::Statement::Update.run_syntax do
+  u = table(User)
+  set(:first_name, param('Mega Anthony'))
+  where(u.first_name.eq(param('Anthony')))
+  returning(:id, :first_name)
+end
+```
+
+Or, you can do a more complex one, like this:
+
+```ruby
+AlgebraDB::Statement::Update.run_syntax do
+  u = table(User)
+  set(:first_name, u.first_name.append(param(' is dope')))
+  returning(:id, :first_name)
+end
+```
+
+This uses an *expression* in the update statement, something rather annoying to do with other Ruby database libraries.
 
 ## Installation
 

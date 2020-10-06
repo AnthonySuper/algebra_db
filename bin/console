@@ -55,6 +55,21 @@ class UserAudit < AlgebraDB::Table
   end
 end
 
+INSERT_QUERY = AlgebraDB::Statement::Insert.run_syntax do
+  into(User, %i[first_name last_name])
+  value(param('Joe'), param('Biden'))
+  value(param('Kamala'), param('Harris'))
+  returning(%i[id first_name last_name])
+end
+
+INSERT_HASHES = AlgebraDB::Statement::Insert.insert_hash(
+  User,
+  [
+    { first_name: 'Bob', last_name: 'Smith' },
+    { first_name: 'Bob', last_name: 'Warwick' }
+  ]
+)
+
 COOL_QUERY = AlgebraDB::Statement::Select.run_syntax do
   audits = all(UserAudit)
   similar = join_relationship(audits.similar_scopes)

@@ -1,7 +1,10 @@
 require 'bundler/setup'
 if ENV['COVERAGE']
   require 'simplecov'
-  SimpleCov.start
+  SimpleCov.start do
+    enable_coverage :branch
+    add_filter '/spec/'
+  end
 end
 
 require 'algebra_db'

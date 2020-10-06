@@ -17,6 +17,14 @@ module AlgebraDB
       end
 
       ##
+      # Names of every column
+      def column_names
+        # NOTE: We don't use #columns
+        # here to avoid the .dup. Premature optimization but eh.
+        (@columns || {}).keys
+      end
+
+      ##
       # We customize the inspect method to return a quick defintion of this table.
       # This makes working with it in a REPL much, much easier.
       def inspect
@@ -67,6 +75,13 @@ module AlgebraDB
       # This is anything you want, and we don't default this.
       # TODO: maybe default this to follow some kind of rails conventions?
       attr_accessor :table_name
+
+      def into_clause(columns)
+        columns.each do |column|
+          raise ArgumentError, "unknown column #{column}" unless column?(column.to_sym)
+        end
+        Build::Into.new(table_name, columns)
+      end
     end
 
     def initialize(table_alias)

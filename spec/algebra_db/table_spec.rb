@@ -24,5 +24,19 @@ RSpec.describe AlgebraDB::Table do
       its(:cool) { should be_a(AlgebraDB::Value::Bool) }
       its(:from_clause) { should render_syntax(%(users tbl_1 )) }
     end
+
+    describe '#into_clause' do
+      subject { table.into_clause(columns) }
+      context 'with valid columns' do
+        let(:columns) { %i[first_name last_name] }
+
+        it { should render_syntax('users(first_name, last_name) ') }
+      end
+
+      context 'with invalid columns' do
+        let(:columns) { %i[first_name not_a_column] }
+        specify { expect { subject }.to raise_error(ArgumentError, match(/not_a_column/)) }
+      end
+    end
   end
 end

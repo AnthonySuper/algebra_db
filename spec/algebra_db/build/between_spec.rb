@@ -18,4 +18,10 @@ RSpec.describe AlgebraDB::Build::Between do
       it { should render_syntax(%("t"."t" #{v} "t"."s" AND "t"."e" )) }
     end
   end
+
+  context 'when used with an invalid type' do
+    let(:between_type) { :not_a_valid_type }
+
+    specify { expect { subject }.to raise_error(ArgumentError, match(/not_a_valid_type/)) }
+  end
 end

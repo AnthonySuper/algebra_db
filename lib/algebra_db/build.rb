@@ -10,6 +10,8 @@ module AlgebraDB
     autoload(:SelectItem, 'algebra_db/build/select_item')
     autoload(:Join, 'algebra_db/build/join')
     autoload(:SelectList, 'algebra_db/build/select_list')
+    autoload(:Into, 'algebra_db/build/into')
+    autoload(:InsertValue, 'algebra_db/build/insert_value')
 
     ##
     # Returns a raw parameter builder, with no value type.

@@ -9,11 +9,15 @@ module AlgebraDB
         @select_decoder = select_decoder
       end
 
+      def returns_values?
+        !@select_decoder.nil?
+      end
+
       def execute!(connection)
         return enum_for(:execute!, connection) unless block_given?
 
         execute_raw!(connection) do |result|
-          result.type_map = @select_decoder.pg_type_map
+          result.type_map = @select_decoder.pg_type_map if @select_decoder
           result.each do |row|
             yield @select_decoder.decode_row(row)
           end

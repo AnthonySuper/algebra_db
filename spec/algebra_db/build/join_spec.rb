@@ -38,4 +38,12 @@ RSpec.describe AlgebraDB::Build::Join do
 
     it { should render_syntax('RIGHT JOIN LATERAL t t ON $1 ') }
   end
+
+  context 'when used with an invalid type' do
+    let(:type) { :not_a_join_lol }
+
+    specify do
+      expect { subject }.to raise_error(ArgumentError, match(/not_a_join_lol/))
+    end
+  end
 end

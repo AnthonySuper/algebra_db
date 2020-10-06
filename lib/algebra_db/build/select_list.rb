@@ -4,7 +4,7 @@ module AlgebraDB
     # Build up a select list.
     class SelectList < Struct.new(:items) # rubocop:disable Style/StructInheritance
       def initialize(*selects)
-        super(selects.flat_map { |i| convert_select_item(i) })
+        super(selects.flatten.flat_map { |i| convert_select_item(i) })
 
         items.each do |i|
           same_name = items.select { |i2| i2.select_alias == i.select_alias }

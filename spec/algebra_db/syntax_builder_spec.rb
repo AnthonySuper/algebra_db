@@ -21,6 +21,14 @@ RSpec.describe AlgebraDB::SyntaxBuilder do
 
     its(:syntax) { should eq '$1, $2, $3 ' }
     its(:params) { should eq([1, 2, 3]) }
+
+    context 'when used without a block' do
+      it 'raises an error' do
+        expect do
+          described_class.new.separate([1, 2, 3])
+        end.to raise_error(ArgumentError, match(/block/))
+      end
+    end
   end
 
   describe '#parenthesize' do
@@ -33,5 +41,13 @@ RSpec.describe AlgebraDB::SyntaxBuilder do
     end
 
     its(:syntax) { should eq '(foo) ' }
+
+    context 'when used without a block' do
+      it 'raises an error' do
+        expect do
+          described_class.new.parenthesize
+        end.to raise_error(ArgumentError, match(/block/))
+      end
+    end
   end
 end
